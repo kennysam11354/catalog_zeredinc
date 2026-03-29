@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__Claude_Preview__preview_start",
+      "Bash(node -e \"const d=require\\(''./src/data/products.json''\\); d.forEach\\(p=>console.log\\(p.sku, ''|'', p.image.split\\(''/''\\).pop\\(\\)\\)\\)\")"
+    ]
+  }
+}

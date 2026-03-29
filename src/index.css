@@ -1,0 +1,479 @@
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600&display=swap');
+
+/* ═══════════════════════════════════════════════════════════
+   DESIGN TOKENS
+═══════════════════════════════════════════════════════════ */
+:root {
+  --red:        #C8102E;
+  --red-dark:   #9e0c24;
+  --red-mid:    #b00e28;
+  --ink:        #1c1c1c;
+  --ink-soft:   #444444;
+  --page-bg:    #e2e2e2;
+  --card-bg:    #ffffff;
+  --border:     #d0d0d0;
+  --border-mid: #bbbbbb;
+  --ref-bg:     #f4f4f4;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RESET
+═══════════════════════════════════════════════════════════ */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html, body, #root { width: 100%; height: 100%; }
+body {
+  font-family: 'Barlow', system-ui, sans-serif;
+  background: radial-gradient(ellipse at 50% 35%, #8a8a8a 0%, #555 100%);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   APP SHELL
+═══════════════════════════════════════════════════════════ */
+.app-shell {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   TOOLBAR
+═══════════════════════════════════════════════════════════ */
+.viewer-toolbar {
+  position: fixed;
+  top: 16px;
+  right: 20px;
+  z-index: 120;
+  display: flex;
+  gap: 8px;
+}
+
+.btn-icon {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.93);
+  color: #222;
+  font-family: 'Barlow', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.28);
+  transition: background 0.15s, transform 0.1s;
+}
+.btn-icon:hover:not(:disabled) { background: #fff; transform: translateY(-1px); }
+.btn-icon.primary { background: var(--red); color: #fff; }
+.btn-icon.primary:hover:not(:disabled) { background: var(--red-dark); transform: translateY(-1px); }
+.btn-icon:disabled { opacity: 0.45; cursor: wait; }
+
+/* ═══════════════════════════════════════════════════════════
+   NAVIGATION
+═══════════════════════════════════════════════════════════ */
+.catalog-workspace {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.viewer-nav {
+  position: fixed;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255,255,255,0.88);
+  color: #333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 100;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+  transition: background 0.15s, transform 0.1s;
+}
+.viewer-nav:hover { background: #fff; transform: translateY(-50%) scale(1.08); }
+.viewer-nav.left  { left: 16px; }
+.viewer-nav.right { right: 16px; }
+
+/* ═══════════════════════════════════════════════════════════
+   PAGE WRAPPER
+═══════════════════════════════════════════════════════════ */
+.page-wrapper {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CATALOG PAGE  (1056 × 816  landscape letter)
+═══════════════════════════════════════════════════════════ */
+.c-page {
+  width: 1056px;
+  height: 816px;
+  flex-shrink: 0;            /* 절대 축소 금지 */
+  background: var(--page-bg);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+  transform-origin: center center;
+  box-shadow: 0 6px 12px rgba(0,0,0,0.15), 0 24px 60px rgba(0,0,0,0.45);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PAGE HEADER
+═══════════════════════════════════════════════════════════ */
+.c-header {
+  height: 44px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: stretch;
+  background: var(--page-bg);
+}
+
+.c-header-left {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 18px;
+  overflow: hidden;
+}
+
+.c-header-subtitle {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #888;
+  white-space: nowrap;
+}
+
+.c-header-divider {
+  color: #bbb;
+  font-size: 0.65rem;
+  flex-shrink: 0;
+}
+
+.c-header-info {
+  font-size: 0.6rem;
+  font-weight: 400;
+  color: #aaa;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.c-header-right {
+  width: 390px;
+  flex-shrink: 0;
+  background: var(--red);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  padding: 0 14px 0 32px;
+  clip-path: polygon(22px 0%, 100% 0%, 100% 100%, 0% 100%);
+}
+
+.c-header-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #fff;
+  white-space: nowrap;
+}
+
+.c-header-emblem {
+  width: 30px;
+  height: 30px;
+  background: #fff;
+  transform: rotate(45deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.c-header-emblem span {
+  transform: rotate(-45deg);
+  font-family: 'Barlow Condensed', sans-serif;
+  font-weight: 800;
+  font-size: 1rem;
+  color: var(--red);
+  line-height: 1;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   2 × 2 GRID
+   Card size: ≈513 × 358px
+═══════════════════════════════════════════════════════════ */
+.c-grid {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 10px;
+  padding: 10px;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   CARD  (flex column — 수직 배치)
+═══════════════════════════════════════════════════════════ */
+.c-item {
+  display: flex;
+  flex-direction: column;
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+/* ── ① TOP PANEL — 제품명 (빨간 배경) ─────────────────── */
+.c-item-top {
+  flex-shrink: 0;
+  height: 74px;
+  background: linear-gradient(110deg, var(--red) 0%, var(--red-mid) 100%);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 11px 13px 9px;
+  gap: 8px;
+  border-bottom: 3px solid var(--red-dark);
+}
+
+.c-name-area {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.c-item-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.12rem;
+  font-weight: 800;
+  line-height: 1.17;
+  text-transform: uppercase;
+  color: #fff;
+  letter-spacing: 0.03em;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+
+.c-top-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+.c-item-cat {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  background: rgba(0,0,0,0.22);
+  color: rgba(255,255,255,0.92);
+  padding: 2px 5px;
+  white-space: nowrap;
+}
+
+.c-qr-mark {
+  width: 22px;
+  height: 22px;
+  color: rgba(255,255,255,0.55);
+  flex-shrink: 0;
+}
+.c-qr-mark svg { width: 100%; height: 100%; }
+
+/* ── ② MIDDLE BODY — Features (좌) + 이미지 (우) ────── */
+.c-item-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  overflow: hidden;
+}
+
+.c-feat-col {
+  padding: 13px 15px 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  overflow: hidden;
+  border-right: 1px solid var(--border);
+}
+
+.c-feat-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--ink);
+  flex-shrink: 0;
+  padding-bottom: 5px;
+  border-bottom: 1.5px solid var(--border-mid);
+}
+
+.c-item-desc {
+  font-family: 'Barlow', sans-serif;
+  font-size: 0.73rem;
+  color: #333;
+  line-height: 1.5;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 9;
+}
+
+.c-img-col {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 14px 12px;
+  background: #fff;
+  overflow: hidden;
+}
+.c-img-col img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  mix-blend-mode: multiply;
+}
+
+/* ── ③ BOTTOM REF BAR ──────────────────────────────── */
+.c-ref-bar {
+  flex-shrink: 0;
+  height: 32px;
+  border-top: 1px solid var(--border);
+  background: var(--ref-bg);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 13px;
+}
+
+.c-ref-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.c-opt-group {
+  flex: 1;
+  justify-content: center;
+  margin: 0 15px;
+  padding: 0 12px;
+  border-left: 1px solid #ddd;
+  border-right: 1px solid #ddd;
+}
+
+.c-ref-badge {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  background: var(--red);
+  color: #fff;
+  padding: 2px 6px;
+  flex-shrink: 0;
+}
+
+.c-ref-badge.opt {
+  background: #555;
+  color: #fff;
+}
+
+.c-ref-sku {
+  font-family: 'Barlow', sans-serif;
+  font-size: 0.72rem;
+  color: var(--ink);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.c-ref-qty {
+  font-family: 'Barlow', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #888;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   PAGE FOOTER
+═══════════════════════════════════════════════════════════ */
+.c-footer {
+  height: 22px;
+  flex-shrink: 0;
+  background: var(--page-bg);
+  border-top: 1px solid var(--border-mid);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+}
+
+.c-footer-num {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #777;
+  letter-spacing: 0.06em;
+  width: 36px;
+}
+.c-footer-num:last-child { text-align: right; }
+
+.c-footer-center {
+  font-size: 0.6rem;
+  font-weight: 500;
+  color: #aaa;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   HIDDEN CATALOG  (PDF 렌더링용)
+═══════════════════════════════════════════════════════════ */
+.hidden-catalog {
+  position: absolute;
+  top: -9999px;
+  left: -9999px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   RESPONSIVE NAV
+═══════════════════════════════════════════════════════════ */
+@media (max-width: 1100px) {
+  .viewer-toolbar { top: 12px; right: 12px; }
+  .viewer-nav.left  { left: 10px; }
+  .viewer-nav.right { right: 10px; }
+}
