@@ -4,10 +4,9 @@ import { ChevronLeft, ChevronRight, Download, FileText } from 'lucide-react';
 import { jsPDF } from 'jspdf';
 import html2canvas from 'html2canvas';
 
-const ITEMS_PER_PAGE = 4;
+const ITEMS_PER_PAGE = 9;
 
 function App() {
-  const [currentPage, setCurrentPage] = useState(0);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [pageScale, setPageScale] = useState(1);
 
@@ -15,8 +14,8 @@ function App() {
     const updateScale = () => {
       const padding = 80;
       const availableWidth  = window.innerWidth  - padding;
-      const availableHeight = window.innerHeight - padding;
-      const scale = Math.min(availableWidth / 1056, availableHeight / 816, 1.5);
+      // For vertical scrolling, we only constrain by width
+      const scale = Math.min(availableWidth / 1056, 1.5);
       setPageScale(scale > 0 ? scale : 1);
     };
     updateScale();
@@ -24,16 +23,34 @@ function App() {
     return () => window.removeEventListener('resize', updateScale);
   }, []);
 
-  const totalPages    = Math.ceil(productsData.length / ITEMS_PER_PAGE);
-  const currentProducts = useMemo(() => {
-    const start = currentPage * ITEMS_PER_PAGE;
-    return productsData.slice(start, start + ITEMS_PER_PAGE);
-  }, [currentPage]);
-
-  const nextPage = () => setCurrentPage(p => Math.min(p + 1, totalPages - 1));
-  const prevPage = () => setCurrentPage(p => Math.max(p - 1, 0));
+  const totalPages = Math.ceil(productsData.length / ITEMS_PER_PAGE);
 
   /* ── PDF export ─────────────────────────────────────────── */
+
+  // Converts an img element's src to a base64 data URL via a temporary canvas.
+  // Works for same-origin and CORS-enabled images. Falls back silently.
+  const imgToDataUrl = (img) =>
+    new Promise(resolve => {
+      const src = img.src;
+      if (!src || src.startsWith('data:')) return resolve(src);
+
+      const image = new Image();
+      image.crossOrigin = 'anonymous';
+      image.onload = () => {
+        try {
+          const c = document.createElement('canvas');
+          c.width  = image.naturalWidth  || 200;
+          c.height = image.naturalHeight || 200;
+          c.getContext('2d').drawImage(image, 0, 0);
+          resolve(c.toDataURL('image/webp'));
+        } catch {
+          resolve(src); // tainted canvas — keep original
+        }
+      };
+      image.onerror = () => resolve(src);
+      image.src = src;
+    });
+
   const downloadPdf = async (fullCatalog = false) => {
     try {
       setIsGeneratingPdf(true);
@@ -43,27 +60,37 @@ function App() {
       const pdf = new jsPDF({ orientation: 'landscape', unit: 'in', format: 'letter' });
 
       if (fullCatalog) {
-        const pages = document.querySelectorAll('#hidden-full-catalog .c-page');
+        const pages = document.querySelectorAll('.catalog-workspace .c-page');
+
         for (let i = 0; i < pages.length; i++) {
+          // Pre-convert all images in this page to data URLs so html2canvas
+          // can capture them without hitting CORS restrictions.
+          const imgs = pages[i].querySelectorAll('img');
+          const origSrcs = [];
+          await Promise.all([...imgs].map(async (img, j) => {
+            origSrcs[j] = img.src;
+            const dataUrl = await imgToDataUrl(img);
+            img.src = dataUrl;
+          }));
+
           const canvas = await html2canvas(pages[i], {
-            scale: 2, useCORS: true, logging: false,
+            scale: 2,
+            useCORS: true,
+            allowTaint: false,
+            logging: false,
             backgroundColor: '#e4e4e4',
-            width: pages[i].offsetWidth, height: pages[i].offsetHeight,
+            width:  pages[i].offsetWidth,
+            height: pages[i].offsetHeight,
           });
+
+          // Restore original src values
+          imgs.forEach((img, j) => { img.src = origSrcs[j]; });
+
           if (i > 0) pdf.addPage();
           pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, 11, 8.5, undefined, 'FAST');
         }
-        pdf.save('Zered_Full_Catalog.pdf');
-      } else {
-        const el = document.querySelector('.visible-page');
-        if (!el) throw new Error('No page found');
-        const canvas = await html2canvas(el, {
-          scale: 2, useCORS: true, logging: false,
-          backgroundColor: '#e4e4e4',
-          width: el.offsetWidth, height: el.offsetHeight,
-        });
-        pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, 11, 8.5, undefined, 'FAST');
-        pdf.save(`Zered_Catalog_Page_${currentPage + 1}.pdf`);
+
+        pdf.save('MAP_Diamond_Tools_Catalog.pdf');
       }
     } catch (err) {
       console.error(err);
@@ -74,29 +101,6 @@ function App() {
     }
   };
 
-  /* ── 이미지 로딩: 로컬(SKU명) → CDN URL 순서로 폴백 ──────── */
-  const handleImgError = (e, sku, cdnUrl) => {
-    const src = e.target.getAttribute('src') || '';
-    if (src.endsWith(`${sku}.png`)) {
-      e.target.src = `/products/${sku}.jpg`;
-    } else if (src.endsWith(`${sku}.jpg`)) {
-      e.target.src = `/products/${sku}.jpeg`;
-    } else if (src.endsWith(`${sku}.jpeg`)) {
-      e.target.src = `/products/${sku}.webp`;
-    } else if (src.endsWith(`${sku}.webp`)) {
-      // 로컬 파일 없음 → CDN URL 사용
-      if (cdnUrl) {
-        e.target.src = cdnUrl;
-      } else {
-        e.target.onerror = null;
-        e.target.style.opacity = '0';
-      }
-    } else {
-      // CDN도 실패 → 이미지 숨김
-      e.target.onerror = null;
-      e.target.style.opacity = '0';
-    }
-  };
 
   /* ── Card renderer ──────────────────────────────────────── */
   const renderCard = (product, idx) => (
@@ -109,20 +113,6 @@ function App() {
         </div>
         <div className="c-top-meta">
           <span className="c-item-cat">{product.categories?.[0] || 'Tool'}</span>
-          <div className="c-qr-mark">
-            <svg viewBox="0 0 20 20" fill="none">
-              <rect x="1" y="1" width="7" height="7" stroke="currentColor" strokeWidth="1.2"/>
-              <rect x="2.5" y="2.5" width="4" height="4" fill="currentColor"/>
-              <rect x="12" y="1" width="7" height="7" stroke="currentColor" strokeWidth="1.2"/>
-              <rect x="13.5" y="2.5" width="4" height="4" fill="currentColor"/>
-              <rect x="1" y="12" width="7" height="7" stroke="currentColor" strokeWidth="1.2"/>
-              <rect x="2.5" y="13.5" width="4" height="4" fill="currentColor"/>
-              <rect x="12" y="12" width="3" height="3" fill="currentColor"/>
-              <rect x="17" y="12" width="3" height="3" fill="currentColor"/>
-              <rect x="12" y="17" width="3" height="3" fill="currentColor"/>
-              <rect x="17" y="17" width="3" height="3" fill="currentColor"/>
-            </svg>
-          </div>
         </div>
       </div>
 
@@ -135,12 +125,14 @@ function App() {
           </p>
         </div>
         <div className="c-img-col">
-          {/* 우선순위: /products/{SKU}.png → .jpg → .jpeg → .webp → CDN URL */}
           <img
-            src={`/products/${product.sku}.png`}
+            src={product.image}
             alt={product.title}
             loading="lazy"
-            onError={e => handleImgError(e, product.sku, product.image)}
+            onError={e => {
+              e.target.onerror = null;
+              e.target.style.opacity = '0';
+            }}
           />
         </div>
       </div>
@@ -171,8 +163,8 @@ function App() {
         <span className="c-header-info">For orders and inquiries, contact your sales representative</span>
       </div>
       <div className="c-header-right">
-        <span className="c-header-title">ZERED TOOLS &amp; EQUIPMENT</span>
-        <div className="c-header-emblem"><span>Z</span></div>
+        <span className="c-header-title">M.A.P Diamond Tools</span>
+        <div className="c-header-emblem"><span>M</span></div>
       </div>
     </div>
   );
@@ -180,7 +172,7 @@ function App() {
   const PageFooter = ({ pageNum }) => (
     <div className="c-footer">
       <span className="c-footer-num">{pageNum}</span>
-      <span className="c-footer-center">zeredinc.com &nbsp;·&nbsp; 1-800-ZERED-INC</span>
+      <span className="c-footer-center">M.A.P Diamond Tools &nbsp;·&nbsp; 718-689-6745</span>
       <span className="c-footer-num">{pageNum}</span>
     </div>
   );
@@ -190,9 +182,6 @@ function App() {
 
       {/* Toolbar */}
       <div className="viewer-toolbar">
-        <button className="btn-icon" onClick={() => downloadPdf(false)} disabled={isGeneratingPdf}>
-          <Download size={16} /><span>Page PDF</span>
-        </button>
         <button className="btn-icon primary" onClick={() => downloadPdf(true)} disabled={isGeneratingPdf}>
           <FileText size={16} /><span>Full Catalog</span>
         </button>
@@ -200,37 +189,50 @@ function App() {
 
       {/* Viewer */}
       <main className="catalog-workspace">
-        {currentPage > 0 && (
-          <button className="viewer-nav left" onClick={prevPage}><ChevronLeft size={26} /></button>
-        )}
-        {currentPage < totalPages - 1 && (
-          <button className="viewer-nav right" onClick={nextPage}><ChevronRight size={26} /></button>
-        )}
-
-        <div className="page-wrapper">
-          <div className="c-page visible-page" style={{ transform: `scale(${pageScale})` }}>
-            <PageHeader pageNum={currentPage + 1} />
-            <div className="c-grid">
-              {currentProducts.map((p, i) => renderCard(p, i))}
-            </div>
-            <PageFooter pageNum={currentPage + 1} />
-          </div>
+        <div className="pages-container" style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          alignItems: 'center', 
+          gap: '40px', 
+          padding: '40px 20px',
+          width: '100%',
+          minWidth: '100%'
+        }}>
+          {Array.from({ length: totalPages }).map((_, pi) => {
+            const slice = productsData.slice(pi * ITEMS_PER_PAGE, (pi + 1) * ITEMS_PER_PAGE);
+            return (
+              <div 
+                key={pi} 
+                className="page-wrapper" 
+                style={{ 
+                  width: 1056 * pageScale, 
+                  height: 816 * pageScale,
+                  display: 'block',
+                  position: 'relative',
+                  flexShrink: 0
+                }}
+              >
+                <div 
+                  className="c-page" 
+                  style={{ 
+                    transform: `scale(${pageScale})`,
+                    transformOrigin: 'top left',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0
+                  }}
+                >
+                  <PageHeader pageNum={pi + 1} />
+                  <div className="c-grid">
+                    {slice.map((p, i) => renderCard(p, i))}
+                  </div>
+                  <PageFooter pageNum={pi + 1} />
+                </div>
+              </div>
+            );
+          })}
         </div>
       </main>
-
-      {/* Hidden pages for full-catalog PDF */}
-      <div id="hidden-full-catalog" className="hidden-catalog">
-        {Array.from({ length: totalPages }).map((_, pi) => {
-          const slice = productsData.slice(pi * ITEMS_PER_PAGE, (pi + 1) * ITEMS_PER_PAGE);
-          return (
-            <div key={pi} className="c-page">
-              <PageHeader pageNum={pi + 1} />
-              <div className="c-grid">{slice.map((p, i) => renderCard(p, i))}</div>
-              <PageFooter pageNum={pi + 1} />
-            </div>
-          );
-        })}
-      </div>
     </div>
   );
 }
