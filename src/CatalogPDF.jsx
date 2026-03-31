@@ -3,6 +3,7 @@ import { Document, Page, View, Text, Image, StyleSheet } from '@react-pdf/render
 
 const RED      = '#C8102E';
 const INK_SOFT = '#444444';
+const BLUE     = '#1a4fb5';
 const ITEMS_PER_PAGE = 9;
 
 const s = StyleSheet.create({
@@ -145,6 +146,20 @@ const CatalogDocument = ({ products }) => {
     if (image.startsWith('http')) return image;
     return `${origin}${image}`;
   };
+  
+  const formatSkuPDF = (sku) => {
+    if (!sku) return null;
+    const parts = sku.split('#');
+    if (parts.length > 1) {
+      return (
+        <Text>
+          {parts[0]}
+          <Text style={{ color: BLUE }}>#{parts.slice(1).join('#')}</Text>
+        </Text>
+      );
+    }
+    return sku;
+  };
 
   return (
     <Document title="MAP Diamond Tools Catalog 2026" author="M.A.P Diamond Tools">
@@ -202,12 +217,12 @@ const CatalogDocument = ({ products }) => {
                     <View style={s.refBar}>
                       <View style={s.refGroup}>
                         <Text style={s.badge}>SKU</Text>
-                        <Text style={s.skuTxt}>{product.sku}</Text>
+                        <Text style={s.skuTxt}>{formatSkuPDF(product.sku)}</Text>
                       </View>
                       {product.option && (
                         <View style={s.refGroup}>
                           <Text style={s.badgeOpt}>OPTION</Text>
-                          <Text style={s.skuTxt}>{product.option}</Text>
+                          <Text style={s.skuTxt}>{formatSkuPDF(product.option)}</Text>
                         </View>
                       )}
                     </View>

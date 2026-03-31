@@ -14,6 +14,7 @@
   --border:     #d0d0d0;
   --border-mid: #bbbbbb;
   --ref-bg:     #f4f4f4;
+  --blue:       #1a4fb5;
 }
 
 /* ═══════════════════════════════════════════════════════════
@@ -624,4 +625,8 @@ body {
   .viewer-toolbar { top: 12px; right: 12px; }
   .viewer-nav.left  { left: 10px; }
   .viewer-nav.right { right: 10px; }
+}
+
+.c-sku-highlight {
+  color: var(--blue);
 }

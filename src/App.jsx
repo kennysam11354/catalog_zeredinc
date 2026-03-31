@@ -124,6 +124,20 @@ function App() {
   };
 
 
+  const formatSku = (sku) => {
+    if (!sku) return null;
+    const parts = sku.split('#');
+    if (parts.length > 1) {
+      return (
+        <>
+          {parts[0]}
+          <span className="c-sku-highlight">#{parts.slice(1).join('#')}</span>
+        </>
+      );
+    }
+    return sku;
+  };
+
   /* ── Card renderer ──────────────────────────────────────── */
   const renderCard = (product, idx) => (
     <div key={`${product.sku}-${idx}`} className="c-item">
@@ -163,13 +177,13 @@ function App() {
       <div className="c-ref-bar">
         <div className="c-ref-group">
           <span className="c-ref-badge">SKU</span>
-          <span className="c-ref-sku">{product.sku}</span>
+          <span className="c-ref-sku">{formatSku(product.sku)}</span>
         </div>
 
         {product.option && (
           <div className="c-ref-group c-opt-group">
             <span className="c-ref-badge opt">OPTION</span>
-            <span className="c-ref-sku">{product.option}</span>
+            <span className="c-ref-sku">{formatSku(product.option)}</span>
           </div>
         )}
       </div>
