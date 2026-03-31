@@ -42,11 +42,97 @@ body {
 ═══════════════════════════════════════════════════════════ */
 .viewer-toolbar {
   position: fixed;
-  top: 16px;
-  right: 20px;
+  top: 0;
+  left: 0;
+  right: 0;
   z-index: 120;
   display: flex;
-  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 10px 20px;
+  background: rgba(28, 28, 28, 0.96);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+
+/* ── Search ─────────────────────────────────────────────── */
+.search-wrap {
+  flex: none;
+  width: 440px;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.search-icon {
+  position: absolute;
+  left: 10px;
+  color: rgba(255,255,255,0.35);
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+.search-input {
+  width: 100%;
+  padding: 7px 34px 7px 32px;
+  background: rgba(255,255,255,0.09);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 6px;
+  color: #fff;
+  font-family: 'Barlow', sans-serif;
+  font-size: 0.82rem;
+  outline: none;
+  transition: border-color 0.15s, background 0.15s;
+}
+.search-input::placeholder { color: rgba(255,255,255,0.3); }
+.search-input:focus {
+  background: rgba(255,255,255,0.13);
+  border-color: rgba(200,16,46,0.55);
+}
+
+.search-clear {
+  position: absolute;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.4);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 3px;
+  transition: color 0.12s;
+}
+.search-clear:hover { color: rgba(255,255,255,0.85); }
+
+.search-count {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: rgba(255,255,255,0.35);
+  white-space: nowrap;
+}
+
+/* ── No results ─────────────────────────────────────────── */
+.no-results {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 80px 20px;
+  color: rgba(255,255,255,0.45);
+}
+.no-results p {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+}
+.no-results span {
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.3);
 }
 
 .btn-icon {
@@ -103,6 +189,62 @@ body {
 .viewer-nav:hover { background: #fff; transform: translateY(-50%) scale(1.08); }
 .viewer-nav.left  { left: 16px; }
 .viewer-nav.right { right: 16px; }
+
+/* ═══════════════════════════════════════════════════════════
+   PAGE GROUP  (액션바 + 페이지 묶음)
+═══════════════════════════════════════════════════════════ */
+.page-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.page-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 4px 8px;
+}
+
+.page-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.55);
+  margin-right: 4px;
+}
+
+.btn-page {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 13px;
+  border: none;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.13);
+  color: rgba(255,255,255,0.88);
+  font-family: 'Barlow', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+}
+.btn-page:hover:not(:disabled) {
+  background: rgba(255,255,255,0.22);
+  transform: translateY(-1px);
+}
+.btn-page.print-btn {
+  background: rgba(255,255,255,0.08);
+}
+.btn-page.print-btn:hover:not(:disabled) {
+  background: rgba(255,255,255,0.16);
+}
+.btn-page:disabled {
+  opacity: 0.35;
+  cursor: wait;
+}
 
 /* ═══════════════════════════════════════════════════════════
    PAGE WRAPPER
@@ -175,9 +317,30 @@ body {
   text-overflow: ellipsis;
 }
 
-.c-header-right {
-  width: 390px;
+.c-header-right-wrap {
+  position: relative;
+  width: 400px;
   flex-shrink: 0;
+  align-self: stretch;
+}
+
+.c-header-right-blue {
+  position: absolute;
+  top: 6px;
+  left: 8px;
+  width: 390px;
+  height: 100%;
+  background: #1a4fb5;
+  clip-path: polygon(22px 0%, 100% 0%, 100% 100%, 0% 100%);
+  z-index: 1;
+}
+
+.c-header-right {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 390px;
+  height: 100%;
   background: var(--red);
   display: flex;
   align-items: center;
@@ -185,6 +348,7 @@ body {
   gap: 12px;
   padding: 0 14px 0 32px;
   clip-path: polygon(22px 0%, 100% 0%, 100% 100%, 0% 100%);
+  z-index: 2;
 }
 
 .c-header-title {

@@ -1,20 +1,21 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import productsData from './data/products.json';
-import { ChevronLeft, ChevronRight, Download, FileText } from 'lucide-react';
-import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
+import { FileText, Download, Printer, Search, X } from 'lucide-react';
+import { pdf } from '@react-pdf/renderer';
+import CatalogDocument from './CatalogPDF';
 
 const ITEMS_PER_PAGE = 9;
 
 function App() {
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [generatingPage, setGeneratingPage] = useState(null);
   const [pageScale, setPageScale] = useState(1);
+  const [query, setQuery] = useState('');
 
   useEffect(() => {
     const updateScale = () => {
       const padding = 80;
       const availableWidth  = window.innerWidth  - padding;
-      // For vertical scrolling, we only constrain by width
       const scale = Math.min(availableWidth / 1056, 1.5);
       setPageScale(scale > 0 ? scale : 1);
     };
@@ -23,81 +24,102 @@ function App() {
     return () => window.removeEventListener('resize', updateScale);
   }, []);
 
-  const totalPages = Math.ceil(productsData.length / ITEMS_PER_PAGE);
+  const filteredProducts = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return productsData;
+    return productsData.filter(p =>
+      p.title?.toLowerCase().includes(q) ||
+      p.sku?.toLowerCase().includes(q) ||
+      p.description?.toLowerCase().includes(q) ||
+      p.categories?.some(c => c.toLowerCase().includes(q))
+    );
+  }, [query]);
 
-  /* ── PDF export ─────────────────────────────────────────── */
+  const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
 
-  // Converts an img element's src to a base64 data URL via a temporary canvas.
-  // Works for same-origin and CORS-enabled images. Falls back silently.
-  const imgToDataUrl = (img) =>
-    new Promise(resolve => {
-      const src = img.src;
-      if (!src || src.startsWith('data:')) return resolve(src);
+  /* ── PDF helpers ─────────────────────────────────────────── */
 
-      const image = new Image();
-      image.crossOrigin = 'anonymous';
-      image.onload = () => {
+  // @react-pdf/renderer does NOT support WebP.
+  // Convert each product image to a JPEG data URL via canvas before building the PDF.
+  const toJpegDataUrl = (src) =>
+    new Promise((resolve) => {
+      if (!src) return resolve(null);
+      const absUrl = src.startsWith('/') ? `${window.location.origin}${src}` : src;
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => {
         try {
           const c = document.createElement('canvas');
-          c.width  = image.naturalWidth  || 200;
-          c.height = image.naturalHeight || 200;
-          c.getContext('2d').drawImage(image, 0, 0);
-          resolve(c.toDataURL('image/webp'));
-        } catch {
-          resolve(src); // tainted canvas — keep original
-        }
+          c.width  = img.naturalWidth  || 1;
+          c.height = img.naturalHeight || 1;
+          c.getContext('2d').drawImage(img, 0, 0);
+          resolve(c.toDataURL('image/jpeg', 0.88));
+        } catch { resolve(null); }
       };
-      image.onerror = () => resolve(src);
-      image.src = src;
+      img.onerror = () => resolve(null);
+      img.src = absUrl;
     });
 
-  const downloadPdf = async (fullCatalog = false) => {
+  const buildBlob = async (products) => {
+    const converted = await Promise.all(
+      products.map(async (p) => {
+        const jpeg = await toJpegDataUrl(p.image);
+        return { ...p, image: jpeg };
+      })
+    );
+    return pdf(<CatalogDocument products={converted} />).toBlob();
+  };
+
+  const triggerDownload = (blob, filename) => {
+    const url = URL.createObjectURL(blob);
+    const a   = document.createElement('a');
+    a.href = url; a.download = filename; a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
+  /* Full catalog */
+  const downloadPdf = async () => {
     try {
       setIsGeneratingPdf(true);
-      setPageScale(1);
-      await new Promise(r => setTimeout(r, 150));
-
-      const pdf = new jsPDF({ orientation: 'landscape', unit: 'in', format: 'letter' });
-
-      if (fullCatalog) {
-        const pages = document.querySelectorAll('.catalog-workspace .c-page');
-
-        for (let i = 0; i < pages.length; i++) {
-          // Pre-convert all images in this page to data URLs so html2canvas
-          // can capture them without hitting CORS restrictions.
-          const imgs = pages[i].querySelectorAll('img');
-          const origSrcs = [];
-          await Promise.all([...imgs].map(async (img, j) => {
-            origSrcs[j] = img.src;
-            const dataUrl = await imgToDataUrl(img);
-            img.src = dataUrl;
-          }));
-
-          const canvas = await html2canvas(pages[i], {
-            scale: 2,
-            useCORS: true,
-            allowTaint: false,
-            logging: false,
-            backgroundColor: '#e4e4e4',
-            width:  pages[i].offsetWidth,
-            height: pages[i].offsetHeight,
-          });
-
-          // Restore original src values
-          imgs.forEach((img, j) => { img.src = origSrcs[j]; });
-
-          if (i > 0) pdf.addPage();
-          pdf.addImage(canvas.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, 11, 8.5, undefined, 'FAST');
-        }
-
-        pdf.save('MAP_Diamond_Tools_Catalog.pdf');
-      }
+      const blob = await buildBlob(filteredProducts);
+      triggerDownload(blob, 'MAP_Diamond_Tools_Catalog.pdf');
     } catch (err) {
       console.error(err);
       alert('PDF 생성에 실패했습니다. 다시 시도해주세요.');
     } finally {
       setIsGeneratingPdf(false);
-      window.dispatchEvent(new Event('resize'));
+    }
+  };
+
+  /* Single page — download */
+  const downloadPagePdf = async (pageIndex) => {
+    try {
+      setGeneratingPage(pageIndex);
+      const slice = productsData.slice(pageIndex * ITEMS_PER_PAGE, (pageIndex + 1) * ITEMS_PER_PAGE);
+      const blob  = await buildBlob(slice);
+      triggerDownload(blob, `MAP_Diamond_Tools_Page_${pageIndex + 1}.pdf`);
+    } catch (err) {
+      console.error(err);
+      alert('PDF 생성에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setGeneratingPage(null);
+    }
+  };
+
+  /* Single page — print (open PDF in new tab) */
+  const printPage = async (pageIndex) => {
+    try {
+      setGeneratingPage(pageIndex);
+      const slice = productsData.slice(pageIndex * ITEMS_PER_PAGE, (pageIndex + 1) * ITEMS_PER_PAGE);
+      const blob  = await buildBlob(slice);
+      const url   = URL.createObjectURL(blob);
+      window.open(url, '_blank');
+      setTimeout(() => URL.revokeObjectURL(url), 10000);
+    } catch (err) {
+      console.error(err);
+      alert('프린트 준비에 실패했습니다. 다시 시도해주세요.');
+    } finally {
+      setGeneratingPage(null);
     }
   };
 
@@ -162,9 +184,12 @@ function App() {
         <span className="c-header-divider">|</span>
         <span className="c-header-info">For orders and inquiries, contact your sales representative</span>
       </div>
-      <div className="c-header-right">
-        <span className="c-header-title">M.A.P Diamond Tools</span>
-        <div className="c-header-emblem"><span>M</span></div>
+      <div className="c-header-right-wrap">
+        <div className="c-header-right-blue" />
+        <div className="c-header-right">
+          <span className="c-header-title">M.A.P Diamond Tools</span>
+          <div className="c-header-emblem"><span>M</span></div>
+        </div>
       </div>
     </div>
   );
@@ -182,51 +207,102 @@ function App() {
 
       {/* Toolbar */}
       <div className="viewer-toolbar">
-        <button className="btn-icon primary" onClick={() => downloadPdf(true)} disabled={isGeneratingPdf}>
+        <div className="search-wrap">
+          <Search size={14} className="search-icon" />
+          <input
+            className="search-input"
+            type="text"
+            placeholder="Search by product, SKU, category…"
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+          />
+          {query && (
+            <button className="search-clear" onClick={() => setQuery('')}>
+              <X size={13} />
+            </button>
+          )}
+        </div>
+        <span className="search-count">
+          {filteredProducts.length} / {productsData.length}
+        </span>
+        <button className="btn-icon primary" onClick={downloadPdf} disabled={isGeneratingPdf || filteredProducts.length === 0}>
           <FileText size={16} /><span>Full Catalog</span>
         </button>
       </div>
 
       {/* Viewer */}
       <main className="catalog-workspace">
-        <div className="pages-container" style={{ 
-          display: 'flex', 
-          flexDirection: 'column', 
-          alignItems: 'center', 
-          gap: '40px', 
-          padding: '40px 20px',
+        <div className="pages-container" style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '40px',
+          padding: '72px 20px 40px',
           width: '100%',
           minWidth: '100%'
         }}>
+          {filteredProducts.length === 0 && (
+            <div className="no-results">
+              <Search size={32} opacity={0.3} />
+              <p>검색 결과가 없습니다.</p>
+              <span>"{query}"</span>
+            </div>
+          )}
+
           {Array.from({ length: totalPages }).map((_, pi) => {
-            const slice = productsData.slice(pi * ITEMS_PER_PAGE, (pi + 1) * ITEMS_PER_PAGE);
+            const slice    = filteredProducts.slice(pi * ITEMS_PER_PAGE, (pi + 1) * ITEMS_PER_PAGE);
+            const isBusy   = generatingPage !== null || isGeneratingPdf;
+            const isThisPage = generatingPage === pi;
             return (
-              <div 
-                key={pi} 
-                className="page-wrapper" 
-                style={{ 
-                  width: 1056 * pageScale, 
-                  height: 816 * pageScale,
-                  display: 'block',
-                  position: 'relative',
-                  flexShrink: 0
-                }}
-              >
-                <div 
-                  className="c-page" 
-                  style={{ 
-                    transform: `scale(${pageScale})`,
-                    transformOrigin: 'top left',
-                    position: 'absolute',
-                    top: 0,
-                    left: 0
+              <div key={pi} className="page-group" style={{ width: 1056 * pageScale, flexShrink: 0 }}>
+
+                {/* Per-page action bar */}
+                <div className="page-actions">
+                  <span className="page-label">Page {pi + 1} / {totalPages}</span>
+                  <button
+                    className="btn-page"
+                    onClick={() => downloadPagePdf(pi)}
+                    disabled={isBusy}
+                  >
+                    <Download size={13} />
+                    {isThisPage && generatingPage !== null ? '생성 중…' : 'Download'}
+                  </button>
+                  <button
+                    className="btn-page print-btn"
+                    onClick={() => printPage(pi)}
+                    disabled={isBusy}
+                  >
+                    <Printer size={13} />
+                    Print
+                  </button>
+                </div>
+
+                {/* Catalog page */}
+                <div
+                  className="page-wrapper"
+                  style={{
+                    width: 1056 * pageScale,
+                    height: 816 * pageScale,
+                    display: 'block',
+                    position: 'relative',
                   }}
                 >
-                  <PageHeader pageNum={pi + 1} />
-                  <div className="c-grid">
-                    {slice.map((p, i) => renderCard(p, i))}
+                  <div
+                    className="c-page"
+                    style={{
+                      transform: `scale(${pageScale})`,
+                      transformOrigin: 'top left',
+                      position: 'absolute',
+                      top: 0,
+                      left: 0
+                    }}
+                  >
+                    <PageHeader pageNum={pi + 1} />
+                    <div className="c-grid">
+                      {slice.map((p, i) => renderCard(p, i))}
+                    </div>
+                    <PageFooter pageNum={pi + 1} />
                   </div>
-                  <PageFooter pageNum={pi + 1} />
                 </div>
               </div>
             );
