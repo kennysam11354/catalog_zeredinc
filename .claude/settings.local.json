@@ -2,7 +2,20 @@
   "permissions": {
     "allow": [
       "mcp__Claude_Preview__preview_start",
-      "Bash(node -e \"const d=require\\(''./src/data/products.json''\\); d.forEach\\(p=>console.log\\(p.sku, ''|'', p.image.split\\(''/''\\).pop\\(\\)\\)\\)\")"
+      "Bash(node -e \"const d=require\\(''./src/data/products.json''\\); d.forEach\\(p=>console.log\\(p.sku, ''|'', p.image.split\\(''/''\\).pop\\(\\)\\)\\)\")",
+      "Bash(node -e \"const d=JSON.parse\\(require\\(''''fs''''\\).readFileSync\\(''''/dev/stdin'''',''''utf8''''\\)\\); console.log\\(''''Total products:'''', d.length\\); console.log\\(''''Sample image:'''', d[0].image\\);\")",
+      "Bash(node -e \"const d=require\\(''./src/data/products.json''\\); console.log\\(''Total products:'', d.length\\);\")",
+      "Bash(node download_product_images.js)",
+      "Bash(node download_product_images.cjs)",
+      "Bash(node -e \"const d=require\\(''./src/data/products.json''\\); console.log\\(''Sample local path:'', d[0].image\\); const ext = d.filter\\(p=>p.image.startsWith\\(''http''\\)\\); console.log\\(''Still external:'', ext.length\\);\")",
+      "Bash(npm install:*)",
+      "Bash(npm run:*)",
+      "Bash(node -e \"const d=require\\(''./src/data/products.json''\\); const ext=d.filter\\(p=>p.image.startsWith\\(''http''\\)\\); const loc=d.filter\\(p=>p.image.startsWith\\(''/''\\)\\); console.log\\(''외부URL:'', ext.length, ''로컬:'', loc.length\\); console.log\\(''샘플:'', d[0].image, d[1].image\\);\")",
+      "WebFetch(domain:mapdiamondtools.com)",
+      "WebSearch",
+      "WebFetch(domain:moazportal.com)",
+      "WebFetch(domain:idigilog.com)",
+      "WebFetch(domain:www.idigilog.com)"
     ]
   }
 }

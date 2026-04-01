@@ -1,10 +1,10 @@
 import React from 'react';
 import { Document, Page, View, Text, Image, StyleSheet } from '@react-pdf/renderer';
 
-const RED      = '#C8102E';
+const RED      = '#f83939';
 const INK_SOFT = '#444444';
 const BLUE     = '#1a4fb5';
-const ITEMS_PER_PAGE = 9;
+const ITEMS_PER_PAGE = 4;
 
 const s = StyleSheet.create({
   page: {
@@ -45,14 +45,14 @@ const s = StyleSheet.create({
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
+    gap: 12,
     flex: 1,
   },
 
   /* ── Card ────────────────────────────────────────────── */
   card: {
-    width: '32.4%',
-    height: 148,
+    width: '49%',
+    height: 240,
     backgroundColor: 'white',
     flexDirection: 'column',
     borderRadius: 2,
@@ -68,14 +68,14 @@ const s = StyleSheet.create({
     minHeight: 24,
   },
   cardName: {
-    fontSize: 6.5, fontFamily: 'Helvetica-Bold',
+    fontSize: 9, fontFamily: 'Helvetica-Bold',
     color: 'white', textTransform: 'uppercase',
     flex: 1, letterSpacing: 0.3,
   },
   cardCat: {
-    fontSize: 4.8, color: 'rgba(255,255,255,0.85)',
+    fontSize: 7, color: 'rgba(255,255,255,0.85)',
     backgroundColor: 'rgba(0,0,0,0.22)',
-    paddingHorizontal: 4, paddingVertical: 2,
+    paddingHorizontal: 5, paddingVertical: 3,
     borderRadius: 2, textTransform: 'uppercase',
     letterSpacing: 0.3, marginLeft: 5,
   },
@@ -87,17 +87,17 @@ const s = StyleSheet.create({
   },
   featCol: { flex: 1, flexDirection: 'column' },
   featLabel: {
-    fontSize: 5, fontFamily: 'Helvetica-Bold',
+    fontSize: 7, fontFamily: 'Helvetica-Bold',
     textTransform: 'uppercase', letterSpacing: 0.5,
     color: '#999', marginBottom: 3,
   },
-  featDesc: { fontSize: 5.5, color: INK_SOFT, lineHeight: 1.45 },
+  featDesc: { fontSize: 8, color: INK_SOFT, lineHeight: 1.45 },
   imgCol: {
-    width: 65,
+    width: 120,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  productImg: { width: 62, height: 62, objectFit: 'contain' },
+  productImg: { width: 110, height: 110, objectFit: 'contain' },
 
   /* ── REF bar ─────────────────────────────────────────── */
   refBar: {
@@ -112,18 +112,18 @@ const s = StyleSheet.create({
   },
   refGroup: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   badge: {
-    fontSize: 4.5, fontFamily: 'Helvetica-Bold',
+    fontSize: 6, fontFamily: 'Helvetica-Bold',
     backgroundColor: RED, color: 'white',
-    paddingHorizontal: 3, paddingVertical: 1.5,
+    paddingHorizontal: 4, paddingVertical: 2,
     borderRadius: 1.5, textTransform: 'uppercase', letterSpacing: 0.3,
   },
   badgeOpt: {
-    fontSize: 4.5, fontFamily: 'Helvetica-Bold',
+    fontSize: 6, fontFamily: 'Helvetica-Bold',
     backgroundColor: '#555', color: 'white',
-    paddingHorizontal: 3, paddingVertical: 1.5,
+    paddingHorizontal: 4, paddingVertical: 2,
     borderRadius: 1.5, textTransform: 'uppercase', letterSpacing: 0.3,
   },
-  skuTxt: { fontSize: 5.2, color: '#1c1c1c', fontFamily: 'Helvetica' },
+  skuTxt: { fontSize: 7, color: '#1c1c1c', fontFamily: 'Helvetica' },
 
   /* ── Footer ──────────────────────────────────────────── */
   footer: {

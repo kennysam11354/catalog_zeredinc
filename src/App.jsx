@@ -4,17 +4,20 @@ import { FileText, Download, Printer, Search, X } from 'lucide-react';
 import { pdf } from '@react-pdf/renderer';
 import CatalogDocument from './CatalogPDF';
 
-const ITEMS_PER_PAGE = 9;
+const ITEMS_PER_PAGE = 4;
 
 function App() {
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [generatingPage, setGeneratingPage] = useState(null);
   const [pageScale, setPageScale] = useState(1);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [query, setQuery] = useState('');
 
   useEffect(() => {
     const updateScale = () => {
-      const padding = 80;
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+      const padding = mobile ? 20 : 80;
       const availableWidth  = window.innerWidth  - padding;
       const scale = Math.min(availableWidth / 1056, 1.5);
       setPageScale(scale > 0 ? scale : 1);
@@ -246,15 +249,7 @@ function App() {
 
       {/* Viewer */}
       <main className="catalog-workspace">
-        <div className="pages-container" style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: '40px',
-          padding: '72px 20px 40px',
-          width: '100%',
-          minWidth: '100%'
-        }}>
+        <div className="pages-container">
           {filteredProducts.length === 0 && (
             <div className="no-results">
               <Search size={32} opacity={0.3} />
@@ -267,6 +262,28 @@ function App() {
             const slice    = filteredProducts.slice(pi * ITEMS_PER_PAGE, (pi + 1) * ITEMS_PER_PAGE);
             const isBusy   = generatingPage !== null || isGeneratingPdf;
             const isThisPage = generatingPage === pi;
+
+            if (isMobile) {
+              return (
+                <div key={pi} className="page-group mobile-page-group">
+                  <div className="page-actions">
+                    <span className="page-label">Page {pi + 1} / {totalPages}</span>
+                    <button className="btn-page" onClick={() => downloadPagePdf(pi)} disabled={isBusy}>
+                      <Download size={13} />
+                      {isThisPage && generatingPage !== null ? '생성 중…' : 'Download'}
+                    </button>
+                    <button className="btn-page print-btn" onClick={() => printPage(pi)} disabled={isBusy}>
+                      <Printer size={13} />
+                      Print
+                    </button>
+                  </div>
+                  <div className="mobile-cards">
+                    {slice.map((p, i) => renderCard(p, i))}
+                  </div>
+                </div>
+              );
+            }
+
             return (
               <div key={pi} className="page-group" style={{ width: 1056 * pageScale, flexShrink: 0 }}>
 
